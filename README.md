@@ -39,7 +39,7 @@ Análisis exploratorio de los delitos denunciados al Departamento de Policía de
 ## Cómo ejecutar el notebook
 
 1. Descargar `Crime_Data_from_2020_to_Present.csv` desde Kaggle.
-2. Abrir `Certamen2_Radiografia_delito_LA.ipynb` en Google Colab.
+2. Abrir `Certamen2_Entrega_Final_Radiografia_delito_LA.ipynb` en Google Colab.
 3. En el panel lateral de **Archivos** de Colab, subir el CSV a `/content/` y esperar a que termine de cargar.
 4. Ejecutar todo: **Entorno de ejecución → Ejecutar todas**.
 
