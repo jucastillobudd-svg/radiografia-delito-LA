@@ -15,7 +15,7 @@ Análisis exploratorio de los delitos denunciados al Departamento de Policía de
 | `Certamen2_Entrega_Final_Radiografia_delito_LA.ipynb` | Notebook de Google Colab con el análisis completo, organizado en 7 bloques |
 | `README.md` | Este archivo |
 
-**Notebook en Colab (solo lectura):** [(https://drive.google.com/file/d/1aj-YRkaptJvExkcJxiLbIUE466P_oX1g/view?usp=sharing)]
+**Notebook en Colab (solo lectura):** https://drive.google.com/file/d/1aj-YRkaptJvExkcJxiLblUE466P_oX1g/view?usp=sharing
 
 ---
 
