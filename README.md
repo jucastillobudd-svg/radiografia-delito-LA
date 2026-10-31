@@ -15,7 +15,7 @@ Análisis exploratorio de los delitos denunciados al Departamento de Policía de
 | `Certamen2_Entrega_Final_Radiografia_delito_LA.ipynb` | Notebook de Google Colab con el análisis completo, organizado en 7 bloques |
 | `README.md` | Este archivo |
 
-**Notebook en Colab (solo lectura):** https://drive.google.com/file/d/1aj-YRkaptJvExkcJxiLblUE466P_oX1g/view?usp=sharing
+**Notebook en Colab (solo lectura):** https://colab.research.google.com/drive/1aj-YRkaptJvExkcJxiLbIUE466P_oX1g
 
 ---
 
@@ -39,7 +39,7 @@ Análisis exploratorio de los delitos denunciados al Departamento de Policía de
 ## Cómo ejecutar el notebook
 
 1. Descargar `Crime_Data_from_2020_to_Present.csv` desde Kaggle.
-2. Abrir `Certamen2_Entrega_Final_Radiografia_delito_LA.ipynb` en Google Colab.
+2. Abrir `Certamen2_Entrega_Final_Radiografia_delito_LA.ipynb` en Google Colab (o usar el link de arriba).
 3. En el panel lateral de **Archivos** de Colab, subir el CSV a `/content/` y esperar a que termine de cargar.
 4. Ejecutar todo: **Entorno de ejecución → Ejecutar todas**.
 
