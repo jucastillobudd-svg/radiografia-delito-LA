@@ -13,6 +13,8 @@ Análisis exploratorio de los delitos denunciados al Departamento de Policía de
 | Archivo | Descripción |
 |---|---|
 | `Certamen2_Entrega_Final_Radiografia_delito_LA.ipynb` | Notebook de Google Colab con el análisis completo, organizado en 7 bloques |
+| `Dashboard_Streamlit_Radiografia_delito_LA.ipynb` | Notebook que construye el dashboard interactivo (gráficos con Plotly y la app de Streamlit) |
+| `delitos_app.py` | App de Streamlit del dashboard (la genera el notebook anterior) |
 | `README.md` | Este archivo |
 
 **Notebook en Colab (solo lectura):** https://colab.research.google.com/drive/1aj-YRkaptJvExkcJxiLbIUE466P_oX1g
@@ -72,3 +74,26 @@ Todas las visualizaciones están hechas con **Seaborn**.
 - **Valores atípicos:** se mantienen todos, porque son casos reales del dominio.
 - **Diciembre de 2023:** se excluye del análisis temporal, porque los datos terminan el 4 de diciembre.
 - **Las 12:00:** se señalan como hora por defecto de registro, no como hora real de más delitos.
+
+---
+
+## Dashboard interactivo (Streamlit + Plotly)
+
+Dashboard para la Policía de Los Ángeles que responde **dónde, a quién y cuándo** priorizar la prevención, a partir de los 3 hallazgos del Certamen 2.
+
+- **Filtros globales** (barra lateral): años, área policial y tipo de delito.
+- **Cifras clave:** delitos, área con más delitos, hora más crítica (sin las 12:00) y % de víctimas mujeres.
+- **Dónde:** mapa de burbujas por área o de puntos calientes, y ranking de áreas.
+- **A quién:** sexo y edad de la víctima por tipo de delito.
+- **Cuándo:** delitos por mes con los hitos de la pandemia y mapa de calor día × hora.
+- Cada sección tiene una lectura que se recalcula con los filtros.
+
+**Ejecutar en el computador** (con `delitos_app.py` y el CSV en la misma carpeta):
+
+```bash
+pip install streamlit plotly pandas
+streamlit run delitos_app.py
+```
+
+**Ejecutar en Colab:** abrir `Dashboard_Streamlit_Radiografia_delito_LA.ipynb`, subir el CSV a `/content/` y ejecutar las celdas en orden; la última entrega un enlace público `.loca.lt`.
+
