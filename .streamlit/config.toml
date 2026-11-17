@@ -1,0 +1,12 @@
+# Tema claro fijo: los gráficos usan fondo blanco, así la app se ve
+# igual aunque el navegador del espectador esté en modo oscuro.
+# Colores del proyecto (los mismos del Certamen 2).
+[theme]
+base = "light"
+primaryColor = "#8B1E1E"
+textColor = "#1b1b1b"
+secondaryBackgroundColor = "#f4f5f7"
+
+[server]
+# El CSV comprimido pesa 19 MB; las subidas no se usan, pero se deja explícito
+maxUploadSize = 50
