@@ -4,7 +4,7 @@
 
 **Integrantes:** Juan Pablo Castillo · Martín Cáceres · Emilio Pacheco
 
-**App en vivo:** https://radiografia-delito-la.streamlit.app
+**App en vivo:** https://radiografia-delito-la-mtwjgjtvhro9e56htwhjc2.streamlit.app
 
 **Versión actual:** beta 2.1.0 (Hito 1)
 
