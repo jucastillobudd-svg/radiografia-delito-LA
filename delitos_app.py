@@ -941,7 +941,13 @@ with tab_cuando:
         st.subheader("Radar semanal: ¿qué día pesa más cada categoría?")
         cats_radar = st.multiselect("Categorías", CATEGORIAS, key="radar_cats",
                                     default=["Violencia y amenazas", "Fraude e identidad", "Robos y hurtos"])
-        g = plano(dff[dff["Categoría"].isin(cats_radar or CATEGORIAS)]
+        # El radar respeta los filtros globales: solo se dibujan categorías que existen en dff.
+        # Si ninguna de las elegidas está en la selección, se muestran las que sí hay.
+        presentes = [c for c in CATEGORIAS if c in contar(dff["Categoría"]).index]
+        elegidas = [c for c in cats_radar if c in presentes] or presentes
+        if cats_radar and not any(c in presentes for c in cats_radar):
+            st.caption("Ninguna de las categorías elegidas está en los filtros globales: se muestran las que sí hay.")
+        g = plano(dff[dff["Categoría"].isin(elegidas)]
                   .groupby(["Categoría", "Día"], observed=True).size().reset_index(name="Delitos"))
         g["Índice (100 = día promedio)"] = g["Delitos"] / g.groupby("Categoría")["Delitos"].transform("mean") * 100
         fig = px.line_polar(
@@ -952,7 +958,8 @@ with tab_cuando:
         )
         fig.update_traces(marker_size=4)
         fig.update_layout(**LAYOUT)
-        rmin = 50        # eje radial desde 50 para que las líneas no crucen por el centro
+        # eje radial desde 50 para que las líneas no crucen por el centro (más abajo si algún día baja de 50)
+        rmin = min(50, g["Índice (100 = día promedio)"].min() - 5)
         fig.update_layout(height=520, polar=dict(angularaxis=dict(direction="clockwise", rotation=90),
                                                  radialaxis=dict(range=[rmin, g["Índice (100 = día promedio)"].max() + 5])),
                           legend=dict(orientation="h", y=-0.12, title=""))
@@ -1170,9 +1177,9 @@ with tab_hallazgos:
 | # | Hallazgo (datos completos, 2020 – nov-2023) | Dónde verlo | Recomendación |
 |---|---|---|---|
 | **1. Dónde** | El delito se concentra en Central (Downtown) y Hollywood: Central es #1 desde 2021 y tiene la mayor densidad por km² de la ciudad; los puntos calientes son pocas cuadras. | 🗺️ Dónde · coropleta por km² y densidad | Reforzar Central y Hollywood; priorizar por **densidad**, no solo por cantidad. Mapa de prioridades por delito (robo desde vehículo → Central; robo de vehículo → 77th Street). |
-| **2. A quién** | El perfil de víctima cambia por delito: violencia de pareja 76% mujeres; robo de identidad 59% mujeres; agresión con arma 72% hombres; robo a vivienda, mediana de 45 años. | 👥 A quién · sexo y edad por delito, categorías paralelas | Campañas segmentadas por delito y perfil de víctima. |
-| **3. Cuándo** | Alza 2020 → 2022 (+17,5%) con la reapertura post-pandemia; peak real el viernes a las 17:00. | ⏰ Cuándo · línea mensual, reloj del delito | Concentrar turnos entre 15:00 y 20:00, en especial los viernes. |
-| **Nuevo** | Solo el 9,0% de los casos termina en arresto (vehículos 2,6%, fraude 1,7%). Donde el delito es más denso, menos se arresta: Valle 11,2% vs Central 6,4% (Spearman −0,37 entre densidad y arresto en las 21 áreas). | ⚖️ Comparar áreas · 🧩 Qué | Reforzar la capacidad de investigación en las áreas más densas (Central, Olympic, Southeast) y estudiar qué hacen distinto las áreas del Valle. |
+| **2. A quién** | El perfil de víctima cambia por delito (% sobre todas las denuncias de cada delito, como en el Certamen 2): robo de identidad 58% mujeres; robo desde vehículo 56% hombres; robo a vivienda, mediana de 45 años. También: violencia de pareja 76% mujeres; agresión con arma 71% hombres. | 👥 A quién · sexo y edad por delito, categorías paralelas | Campañas segmentadas por delito y perfil de víctima. |
+| **3. Cuándo** | Alza 2020 → 2022 (+17,5%) con la reapertura post-pandemia. La franja real va de 15:00 a 20:00 (un tercio de los delitos; máximo a las 18:00) y el viernes es el día con más delitos; las 12:00 están infladas por ser la hora que se anota por defecto. | ⏰ Cuándo · línea mensual, reloj del delito | Concentrar turnos entre 15:00 y 20:00, en especial los viernes. |
+| **Nuevo** | Solo el 9,0% de los casos termina en arresto (vehículos 2,6%, fraude 1,7%). Donde el delito es más denso, menos se arresta: por buró, Valle 11,2% vs Central 7,9%; por área, de Harbor (12,7%) a Central (6,4%), con Spearman −0,37 entre densidad y arresto en las 21 áreas. | ⚖️ Comparar áreas · 🧩 Qué | Reforzar la capacidad de investigación en las áreas densas con menos arresto (Central 6,4% y Southeast 6,6%) y estudiar qué hacen distinto las áreas del Valle. |
 
 **Límites.** Datos hasta nov-2023 (se cortó diciembre, incompleto); las 12:00 y el sexo faltante son problemas
 de registro; no hay 2019 para comparar y una coincidencia en el tiempo no prueba causa. Los límites de áreas y

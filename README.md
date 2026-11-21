@@ -24,7 +24,7 @@ El dashboard está pensado para las **jefaturas de área y los equipos de planif
 
 **Filtros globales** (panel lateral, afectan a toda la página): período (selector de fechas), área policial, categoría de delito, tipo de delito (top 10), gravedad, sexo de la víctima y hora del día. Si la combinación deja la tabla vacía, la app avisa y se detiene con `st.stop()`. Hay un botón para restablecer los filtros.
 
-**6 KPIs** con `st.metric`: delitos, promedio diario, % de delitos graves, % con arresto, % de víctimas mujeres y hora más crítica. Cada uno compara contra el **total sin filtros** usando `delta`.
+**6 KPIs** con `st.metric`: delitos, promedio diario, % de delitos graves, % con arresto, % de víctimas mujeres y hora más crítica. Cinco de ellos comparan contra el **total sin filtros** usando `delta`; el de la hora más crítica muestra debajo el % de delitos denunciados el mismo día.
 
 | Pestaña | Gráficos (todos con Plotly Express y `st.plotly_chart`) | Controles locales |
 |---|---|---|
