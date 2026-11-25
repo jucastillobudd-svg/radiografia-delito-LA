@@ -1,10 +1,10 @@
 # delitos_app.py
 # ============================================================
 #  DASHBOARD — Radiografía del delito en Los Ángeles (2020–2023)
-#  Taller de Visualización de la Información (UDD) · Examen final
-#  Juan Pablo Castillo · Martín Cáceres · Emilio Pacheco
+#  Taller de Visualización de la Información (UDD), Examen final
+#  Juan Pablo Castillo, Martín Cáceres y Emilio Pacheco
 #
-#  Versión: beta 2.1.0 (Hito 1)
+#  Versión: 3.0.0 (Hito 2)
 #
 #  Ejecutar en local:  streamlit run delitos_app.py
 #  Publicar:           repo en GitHub -> Streamlit Community Cloud
@@ -12,7 +12,7 @@
 #  Pregunta del dashboard: ¿Dónde, cuándo y a quién debe priorizar
 #  la prevención la Policía de Los Ángeles (LAPD)?
 #
-#  Idea clave de Streamlit: el script se ejecuta de ARRIBA A ABAJO
+#  Idea clave de Streamlit: el script se ejecuta de arriba a abajo
 #  cada vez que el usuario mueve un widget. Todo el dashboard es
 #  código Python normal, leído en orden.
 #
@@ -32,20 +32,19 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-VERSION = "beta 2.1.0"
+VERSION = "3.0.0"
 CARPETA = Path(__file__).parent / "data"   # funciona en local y en Streamlit Cloud
 
 # ── 1. CONFIGURACIÓN DE LA PÁGINA ────────────────────────────
-# Debe ser la PRIMERA instrucción de Streamlit del script.
+# Debe ser la primera instrucción de Streamlit del script.
 st.set_page_config(
     page_title="Delitos en Los Ángeles",
-    page_icon="🚓",
     layout="wide",
 )
 
 # ── 2. PALETA DE COLORES Y ESTILO COMPARTIDO ─────────────────
 # Mismos colores del Certamen 2 (navy, rojo, gris). Una categoría
-# tiene SIEMPRE el mismo color en todos los gráficos.
+# tiene siempre el mismo color en todos los gráficos.
 AZUL, ROJO, GRIS, SALMON, DORADO = "#0b2545", "#8B1E1E", "#6c7480", "#e07a6f", "#c9a227"
 
 COLOR_SEXO = {"Mujer": ROJO, "Hombre": AZUL, "Desconocido (X)": "#a9b0b9", "Sin dato": "#dde1e6"}
@@ -133,7 +132,7 @@ DETALLE = {**TOP10,
 }
 
 # Reglas para agrupar las 138 descripciones del LAPD en 7 categorías.
-# Se revisan EN ORDEN y gana la primera que calza (por eso "THEFT OF
+# Se revisan en orden y gana la primera que calza (por eso "THEFT OF
 # IDENTITY" queda en Fraude y no en Robos).
 REGLAS_CATEGORIA = [
     ("Fraude e identidad", r"IDENTITY|FORGERY|FRAUD|COUNTERFEIT|BUNCO|EMBEZZLEMENT|DOCUMENT WORTHLESS|DEFRAUD|DISHONEST EMPLOYEE|UNAUTHORIZED COMPUTER|BRIBERY|EXTORTION"),
@@ -172,7 +171,7 @@ def clasificar(valor, reglas, otro="Otros"):
 
 
 def mapear(serie, reglas, otro="Otros"):
-    """Clasifica solo los valores ÚNICOS (138 delitos, no 850 mil filas) y luego usa .map()."""
+    """Clasifica solo los valores únicos (138 delitos, no 850 mil filas) y luego usa .map()."""
     unicos = serie.dropna().unique()
     return serie.map({v: clasificar(v, reglas, otro) for v in unicos})
 
@@ -198,13 +197,17 @@ def lectura(texto):
 
 
 # ── 3. CARGAR Y PREPARAR LOS DATOS ───────────────────────────
-# @st.cache_data: la función se ejecuta UNA SOLA VEZ y Streamlit
+# @st.cache_data: la función se ejecuta una sola vez y Streamlit
 # guarda el resultado en memoria. Sin esta línea, cada clic en un
 # filtro volvería a leer y limpiar los 851 mil delitos (~5 s cada vez).
 @st.cache_data(show_spinner="Cargando 851 mil delitos (solo la primera vez)...")
 def cargar_datos():
-    # Dataset limpio del Certamen 2, completo (19 MB comprimido, ver preparar_datos.py)
-    df = pd.read_csv(CARPETA / "delitos_LA_limpio.csv.gz", parse_dates=["date_occurred"])
+    # Dataset limpio del Certamen 2, completo (19 MB comprimido, ver preparar_datos.py).
+    # Las columnas de texto se leen como 'category': el DataFrame ocupa ~55 MB en vez de ~410 MB.
+    textos = ["area_name", "crime_description", "victim_sex", "premise_description",
+              "weapon_description", "status_description"]
+    df = pd.read_csv(CARPETA / "delitos_LA_limpio.csv.gz", parse_dates=["date_occurred"],
+                     dtype={c: "category" for c in textos})
 
     # Variables de tiempo
     df["Fecha"] = df["date_occurred"].dt.normalize()
@@ -235,7 +238,7 @@ def cargar_datos():
     df["Edad"] = df["victim_age"].where(df["victim_age"] > 0)        # 0 o negativa = sin víctima persona
     df["Retraso (días)"] = df["retraso_dias"]
 
-    # Indicadores 0/1: su PROMEDIO por grupo es directamente una proporción
+    # Indicadores 0/1: su promedio por grupo es directamente una proporción
     # (ej. mean de "Arresto" = % de casos con arresto). Evita lambdas lentas.
     df["Arresto"] = (df["Estado"] == "Con arresto").astype(int)
     df["Grave"] = (df["Gravedad"] == "Grave").astype(int)
@@ -308,11 +311,11 @@ def restablecer():
 
 
 # ── 4. SIDEBAR — FILTROS GLOBALES ────────────────────────────
-# Cada widget DEVUELVE lo que eligió el usuario. Estos filtros
-# afectan a TODO el dashboard: KPIs, mapas y gráficos.
+# Cada widget devuelve lo que eligió el usuario. Estos filtros
+# afectan a todo el dashboard: KPIs, mapas y gráficos.
 with st.sidebar:
-    st.title("🚓 Delitos en LA")
-    st.caption("Filtros globales — afectan todos los KPIs y gráficos. Vacío = todo.")
+    st.title("Delitos en LA")
+    st.caption("Estos filtros afectan a todos los KPIs y gráficos. Si un filtro queda vacío, se incluye todo.")
 
     # slider de fechas -> tupla (desde, hasta)
     fecha_ini, fecha_fin = st.slider("Período", min_value=FECHA_MIN, max_value=FECHA_MAX,
@@ -329,15 +332,15 @@ with st.sidebar:
     sexos = st.multiselect("Sexo de la víctima", SEXOS, placeholder="Todos", key="f_sexo")
     hora_ini, hora_fin = st.slider("Hora del día", 0, 23, key="f_horas", format="%d:00")
 
-    st.button("↺ Restablecer filtros", on_click=restablecer, width="stretch")
+    st.button("Restablecer filtros", on_click=restablecer, width="stretch")
     st.divider()
-    st.caption(f"Dataset completo: **{fmt(len(df))} delitos** (ene-2020 a nov-2023), sin muestreo. "
+    st.caption(f"Dataset completo: {fmt(len(df))} delitos (ene-2020 a nov-2023), sin muestreo. "
                "Fuente: LAPD vía Kaggle (asaniczka), licencia CC0.")
-    st.caption(f"Versión **{VERSION}** · [Repositorio en GitHub]"
+    st.caption(f"Versión {VERSION}. [Repositorio en GitHub]"
                "(https://github.com/jucastillobudd-svg/radiografia-delito-LA)")
 
 # ── 5. APLICAR LOS FILTROS (pandas puro) ─────────────────────
-# Máscara booleana: True en las filas que cumplen TODOS los filtros.
+# Máscara booleana: True en las filas que cumplen todos los filtros.
 # Si una lista está vacía, no se filtra por esa variable.
 mask = df["Fecha"].between(pd.Timestamp(fecha_ini), pd.Timestamp(fecha_fin))
 mask &= df["Hora"].between(hora_ini, hora_fin)
@@ -349,7 +352,7 @@ if gravedad != "Todos":
     mask &= df["Gravedad"] == gravedad
 if sexos:
     mask &= df["Sexo"].isin(sexos)
-mask_sin_area = mask.copy()        # la usa el comparador de áreas (pestaña ⚖️)
+mask_sin_area = mask.copy()        # la usa el comparador de áreas (pestaña Comparar áreas)
 if areas:
     mask &= df["Área"].isin(areas)
 
@@ -358,18 +361,18 @@ dff = df[mask]  # dff = "dataframe filtrado"
 # ── 6. ENCABEZADO ─────────────────────────────────────────────
 st.title("Radiografía del delito en Los Ángeles (2020–2023)")
 st.markdown("#### ¿Dónde, cuándo y a quién debe priorizar la prevención la Policía de Los Ángeles?")
-st.caption("**Dirigido a:** jefaturas de área y equipos de planificación de patrullajes del LAPD, "
-           "y a la Municipalidad de Los Ángeles · "
-           f"Mostrando **{fmt(len(dff))}** de {fmt(len(df))} delitos con los filtros aplicados")
+st.caption("Dirigido a las jefaturas de área y equipos de planificación de patrullajes del LAPD, "
+           "y a la Municipalidad de Los Ángeles. "
+           f"Con los filtros aplicados se muestran {fmt(len(dff))} de {fmt(len(df))} delitos.")
 
 # Si los filtros dejan el DataFrame vacío, avisamos y paramos.
 if dff.empty:
     st.warning("No hay delitos para los filtros seleccionados. Ajusta el panel lateral "
-               "o usa **↺ Restablecer filtros**.")
+               "o usa el botón Restablecer filtros.")
     st.stop()
 
 # ── 7. KPIs (TARJETAS DE MÉTRICAS) ───────────────────────────
-# delta = comparación contra el TOTAL SIN FILTROS (df), no contra dff.
+# delta = comparación contra el total sin filtros (df), no contra dff.
 dias_sel = (pd.Timestamp(fecha_fin) - pd.Timestamp(fecha_ini)).days + 1
 dias_tot = (df["Fecha"].max() - df["Fecha"].min()).days + 1
 # El promedio de una columna 0/1 es una proporción (ver sección 3)
@@ -396,7 +399,7 @@ k4.metric("Con arresto", pct(kpi["arresto"]), delta=delta_pp("arresto"),
           help="% de casos cerrados con arresto (adulto o menor). Verde = más arrestos que el total.")
 k5.metric("Víctimas mujeres", pct(kpi["mujer"]), delta=delta_pp("mujer"), delta_color="off",
           help="% de mujeres entre las víctimas con sexo conocido (mujer u hombre).")
-k6.metric("Hora más crítica", f"{por_hora.index[0]}:00" if len(por_hora) else "—",
+k6.metric("Hora más crítica", f"{por_hora.index[0]}:00" if len(por_hora) else "Sin dato",
           delta=f"{pct(kpi['mismo_dia'], 0)} mismo día", delta_color="off",
           help="Hora con más delitos, sin contar las 12:00 (hora que se anota por defecto cuando no se "
                "conoce la real). Debajo: % de delitos denunciados el mismo día en que ocurrieron.")
@@ -405,7 +408,7 @@ st.divider()
 
 # ── PESTAÑAS ─────────────────────────────────────────────────
 tab_donde, tab_que, tab_quien, tab_cuando, tab_comparar, tab_hallazgos = st.tabs(
-    ["🗺️ Dónde", "🧩 Qué", "👥 A quién", "⏰ Cuándo", "⚖️ Comparar áreas", "💡 Hallazgos"])
+    ["Dónde", "Qué", "A quién", "Cuándo", "Comparar áreas", "Hallazgos"])
 
 # Datos para los mapas: solo coordenadas válidas
 dff_mapa = dff[dff["Coord. válida"]]
@@ -414,20 +417,20 @@ centro = ({"lat": dff_mapa["latitude"].mean(), "lon": dff_mapa["longitude"].mean
           if areas and len(dff_mapa) else CENTRO_LA)
 zoom = 10.6 if areas else 9.1
 
-# Capa con los bordes de las 21 áreas: se dibuja ENCIMA de los mapas
+# Capa con los bordes de las 21 áreas: se dibuja encima de los mapas
 # de puntos y densidad para que se lean los límites policiales.
 BORDES = [dict(sourcetype="geojson", source=GJ_AREAS, type="line", color="#1b1b1b", line=dict(width=1.2))]
 
 # ── 8. PESTAÑA DÓNDE — MAPAS ─────────────────────────────────
 with tab_donde:
-    st.caption(f"🧭 Se excluyeron **{fmt(invalidas)}** delitos ({pct(invalidas / len(dff) * 100, 2)}) con "
-               "coordenadas inválidas: (0,0) = ubicación faltante según el LAPD, o fuera del rango de "
-               "Los Ángeles (lat 33,7–34,4; lon −118,7 a −118,1).")
+    st.caption(f"Se excluyeron {fmt(invalidas)} delitos ({pct(invalidas / len(dff) * 100, 2)}) con "
+               "coordenadas inválidas: (0,0), que el LAPD usa cuando falta la ubicación, o puntos fuera de "
+               "Los Ángeles (latitud 33,7 a 34,4 y longitud -118,7 a -118,1).")
 
     # ---- 8.1 Coropleta por área o distrito --------------------
     st.subheader("Mapa de coropletas: ¿qué zonas concentran el delito?")
     c1, c2, c3 = st.columns([1.2, 1.6, 1])
-    # Controles LOCALES: solo afectan a este mapa
+    # Controles locales: solo afectan a este mapa
     nivel = c1.radio("Nivel geográfico", ["Área (21)", "Distrito de reporte (~1.100)"], horizontal=True,
                      key="cor_nivel")
     indicador = c2.selectbox("Indicador", ["Delitos", "Delitos por km² al año", "% delitos graves", "% con arresto",
@@ -489,7 +492,7 @@ with tab_donde:
         hover_data={unidad: False, "Área": unidad == "Distrito", "Buró": True, "Delitos": ":,",
                     "Delitos por km² al año": ":,.0f", "% delitos graves": ":.1f", "% con arresto": ":.1f",
                     "Variación": ":+.1f", "Principal": True, "km²": ":.2f"},
-        labels={"Principal": "Delito más frecuente", "Variación": f"Variación {a1}→{a2} (%)",
+        labels={"Principal": "Delito más frecuente", "Variación": f"Variación {a1}-{a2} (%)",
                 "Distrito": "Distrito de reporte"},
         color_continuous_scale="RdBu_r" if diverge else "Reds",
         range_color=rango_color,
@@ -505,23 +508,26 @@ with tab_donde:
     with col_texto:
         orden = g.sort_values(columna_color, ascending=False).dropna(subset=[columna_color])
         nombre = unidad
-        top3 = ", ".join(f"**{r[nombre]}** ({num(r[columna_color], 1 if '%' in columna_color or columna_color == 'Variación' else 0)})"
+        top3 = ", ".join(f"{r[nombre]} ({num(r[columna_color], 1 if '%' in columna_color or columna_color == 'Variación' else 0)})"
                          for _, r in orden.head(3).iterrows())
         bajo = orden.iloc[-1]
         st.markdown(f"##### Lectura del mapa")
-        st.markdown(f"**Dónde se concentra:** {top3}.")
-        st.markdown(f"**Dónde no:** {bajo[nombre]} es el valor más bajo "
-                    f"({num(bajo[columna_color], 1 if '%' in columna_color or columna_color == 'Variación' else 0)}).")
         if unidad == "Área":
             top5 = g.nlargest(5, "Delitos")["Delitos"].sum() / g["Delitos"].sum() * 100
-            st.markdown(f"**Concentración:** las 5 áreas con más delitos suman el {pct(top5)}; "
-                        "Central tiene la mayor densidad por km² de toda la ciudad (Downtown).")
+            extra = f"Las 5 áreas con más delitos suman el {pct(top5)} del total."
         else:
-            top10 = g.nlargest(round(len(g) * 0.1), "Delitos")["Delitos"].sum() / g["Delitos"].sum() * 100
-            st.markdown(f"**Concentración:** el 10% de los distritos con más delitos reúne el {pct(top10)} "
-                        "de los casos: el delito se agrupa en pocas cuadras.")
-        st.markdown("**Qué implica:** priorizar patrullaje por **densidad** (delitos por km²) y no solo por "
-                    "cantidad: un área grande del Valle puede sumar muchos delitos repartidos en mucho territorio.")
+            top10 = g.nlargest(max(round(len(g) * 0.1), 1), "Delitos")["Delitos"].sum() / g["Delitos"].sum() * 100
+            extra = f"El 10% de los distritos con más delitos reúne el {pct(top10)} de los casos."
+        st.markdown(f"Dónde se concentra: {top3}. {extra}")
+        if len(orden) > 1:
+            st.markdown(f"Dónde no: {bajo[nombre]} tiene el valor más bajo "
+                        f"({num(bajo[columna_color], 1 if '%' in columna_color or columna_color == 'Variación' else 0)}).")
+        else:
+            st.markdown("Dónde no: con una sola zona en el mapa no hay con qué comparar; "
+                        "quita el filtro de área o cambia a nivel distrito.")
+        st.markdown("Qué implica: para priorizar el patrullaje conviene mirar la densidad (delitos por km²) "
+                    "además de la cantidad, porque un área grande del Valle puede sumar muchos delitos repartidos "
+                    "en mucho territorio, mientras que en Central (Downtown) se juntan en pocas cuadras.")
 
     st.divider()
 
@@ -554,11 +560,13 @@ with tab_donde:
         st.plotly_chart(fig, width="stretch")
         st.caption(f"Muestra de {fmt(len(muestra))} de {fmt(len(dff_mapa))} delitos con coordenadas válidas "
                    "(random_state=42). Líneas negras = límites de las 21 áreas.")
-        mayor = muestra.groupby("Área").size().idxmax() if len(muestra) else "—"
-        lectura(f"El área con más puntos de la muestra es **{mayor}**. Los puntos se amontonan en el centro-sur "
-                "(Downtown, Koreatown, Hollywood, South LA) y siguen las avenidas del Valle; las zonas vacías son los "
-                "cerros (Santa Monica Mountains, Griffith Park). Cambia el color a *Categoría*: los delitos de "
-                "vehículo se reparten por toda la ciudad, la violencia se concentra en el centro-sur.")
+        mayor = muestra.groupby("Área").size().idxmax() if len(muestra) else "sin datos"
+        lectura(f"Dónde se concentra: el área con más puntos en la muestra es {mayor}. Con todos los datos, los "
+                "puntos se juntan en el centro-sur (Downtown, Koreatown, Hollywood y South LA) y siguen las avenidas "
+                "del Valle.\n\nDónde no: los cerros (Santa Monica Mountains y Griffith Park) casi no tienen puntos."
+                "\n\nQué implica: si se colorea por Categoría, los delitos de vehículo aparecen repartidos por toda "
+                "la ciudad y necesitan cobertura amplia, mientras que la violencia se concentra en el centro-sur y "
+                "permite un patrullaje más focalizado.")
 
     with col_d:
         st.subheader("Mapa de densidad: puntos calientes")
@@ -584,11 +592,12 @@ with tab_donde:
         top_celda = g.nlargest(1, "Delitos").iloc[0]
         st.caption(f"{fmt(len(g))} celdas de {celda}. Escala hasta el percentil 99 para que pocas celdas "
                    "extremas no dejen el resto pálido.")
-        lectura(f"La celda más caliente está en **{top_celda['Área']}** con {fmt(top_celda['Delitos'])} delitos, "
-                f"frente a una mediana de {fmt(g['Delitos'].median())} por celda: el delito se concentra en "
-                "manchas de pocas cuadras. Con todos los datos, de las 15 celdas más calientes 8 están en Central "
-                "(Downtown), 3 en Olympic (Koreatown), 2 en Hollywood y 2 en Rampart; el Valle muestra focos "
-                "chicos y dispersos.")
+        lectura(f"Dónde se concentra: la celda con más delitos está en {top_celda['Área']} "
+                f"({fmt(top_celda['Delitos'])}). Con todos los datos, de las 15 celdas con más delitos 8 están en "
+                "Central (Downtown), 3 en Olympic (Koreatown), 2 en Hollywood y 2 en Rampart.\n\nDónde no: la "
+                f"mediana es de {fmt(g['Delitos'].median())} delitos por celda y en el Valle los focos son chicos y "
+                "dispersos.\n\nQué implica: el delito se junta en manchas de pocas cuadras, así que conviene "
+                "asignar patrullaje a esos puntos calientes en vez de repartirlo parejo por toda el área.")
 
     st.divider()
 
@@ -616,10 +625,10 @@ with tab_donde:
                       xaxis_title="Delitos" if x == "Delitos" else "Delitos por km² al año",
                       legend=dict(orientation="h", y=-0.12, title="Buró"))
     st.plotly_chart(fig, width="stretch")
-    lectura("Por cantidad, Central, 77th Street y Pacific lideran, y la diferencia entre áreas es moderada. Por "
-            "**densidad** cambia todo: Central (1.157 delitos por km² al año con todos los datos) más que duplica "
-            "a todas las áreas salvo Rampart y Olympic, y las áreas del Valle y West LA quedan al final porque "
-            "reparten sus delitos en mucho territorio.")
+    lectura("Por cantidad, Central, 77th Street y Pacific están arriba y las diferencias entre áreas son moderadas. "
+            "Por densidad el orden cambia bastante: Central (1.157 delitos por km² al año con todos los datos) más "
+            "que duplica a todas las áreas salvo Rampart y Olympic, y las áreas del Valle y West LA quedan al final "
+            "porque sus delitos están repartidos en mucho territorio.")
 
 # ── 9. PESTAÑA QUÉ — JERARQUÍA DE DELITOS ────────────────────
 with tab_que:
@@ -662,14 +671,14 @@ with tab_que:
     fig.update_layout(height=640, margin=dict(t=10, b=10, l=10, r=10),
                       coloraxis_colorbar=dict(title=color_jer, thickness=12))
     st.plotly_chart(fig, width="stretch")
-    st.caption(f"`path = {path}` · `values = 'Delitos'` (cantidad de delitos) · color = {color_jer.lower()} "
-               "(los niveles superiores muestran el promedio ponderado). Haz clic en un sector para entrar; "
-               "clic al centro para volver.")
-    lectura("Violencia y amenazas es la categoría más grande (30,5% con todos los datos) y Vehículos le sigue "
-            "(26,0%); todos los delitos de vehículo y de robo son *graves* (Parte 1). Con color = **% con arresto**, "
-            "la violencia es la más oscura (17,6% termina en arresto) y Vehículos (2,6%) y Fraude (1,7%) casi no "
-            "tienen color. Con color = **% víctimas mujeres** (rojo = mayoría mujeres), destacan violencia de "
-            "pareja, delitos sexuales y robo de identidad.")
+    st.caption(f"`path = {path}`, `values = 'Delitos'` (cantidad de delitos), color = {color_jer.lower()} "
+               "(los niveles superiores muestran el promedio ponderado). Haz clic en un sector para entrar "
+               "y en el centro para volver.")
+    lectura("Violencia y amenazas es la categoría más grande (30,5% con todos los datos), seguida de Vehículos "
+            "(26,0%). Todos los delitos de vehículo y de robo son graves (Parte 1). Con el color en % con arresto, "
+            "la violencia es la más oscura (17,6% termina en arresto), mientras que Vehículos (2,6%) y Fraude (1,7%) "
+            "casi no tienen color. Con el color en % víctimas mujeres (rojo = mayoría mujeres), destacan la violencia "
+            "de pareja, los delitos sexuales y el robo de identidad.")
 
     st.divider()
     c1, c2 = st.columns(2)
@@ -707,9 +716,9 @@ with tab_que:
         fig.update_layout(**LAYOUT)
         fig.update_layout(height=520, yaxis_title="", legend=dict(orientation="h", y=-0.15, title=""))
         st.plotly_chart(fig, width="stretch")
-    lectura("A la izquierda, los 15 delitos más frecuentes (robo de vehículo encabeza la lista). A la derecha, el "
-            "estado del caso: 8 de cada 10 siguen *en investigación* y solo la violencia supera el 15% de arrestos; "
-            "en vehículos y fraude el arresto es casi inexistente.")
+    lectura("A la izquierda están los 15 delitos más frecuentes, encabezados por el robo de vehículo. A la derecha "
+            "está el estado de los casos: 8 de cada 10 siguen en investigación y solo la violencia supera el 15% de "
+            "arrestos. En vehículos y fraude casi no hay arrestos.")
 
     # Relación entre dos variables categóricas: lugar x categoría (ancho completo)
     st.subheader("¿Dónde ocurre cada tipo de delito?")
@@ -725,10 +734,10 @@ with tab_que:
     fig.update_layout(**LAYOUT)
     fig.update_layout(height=430, xaxis=dict(title="", side="top", tickangle=0), yaxis_title="")
     st.plotly_chart(fig, width="stretch")
-    lectura("Cada fila suma 100%. Los delitos de vehículo ocurren en la calle (62%) y en estacionamientos; el fraude "
-            "(70%) y los delitos sexuales (57%), en la vivienda; la violencia se reparte entre vivienda (39%) y "
-            "calle (35%); el robo y hurto, entre vivienda (39%) y comercio. Eso orienta **qué unidad** patrulla "
-            "**dónde**.")
+    lectura("Cada fila suma 100%. Los delitos de vehículo ocurren sobre todo en la calle (62%) y en estacionamientos. "
+            "El fraude (70%) y los delitos sexuales (57%) ocurren principalmente en la vivienda. La violencia se "
+            "reparte entre vivienda (39%) y calle (35%), y el robo y hurto entre vivienda (39%) y comercio. Esto "
+            "sirve para decidir qué tipo de unidad patrulla en cada lugar.")
 
 # ── 10. PESTAÑA A QUIÉN — VÍCTIMAS ───────────────────────────
 with tab_quien:
@@ -761,9 +770,9 @@ with tab_quien:
             fig.update_layout(**LAYOUT)
             fig.update_layout(height=430, yaxis_title="Víctimas", legend=dict(orientation="h", y=-0.2, title=""))
             st.plotly_chart(fig, width="stretch")
-            lectura(f"Distribución con asimetría positiva: la mediana es {mediana:.0f} años y la cola llega a los "
-                    "90+. El peak está entre los 25 y 40 años. Se excluyen las edades 0 o negativas "
-                    "(delitos sin víctima persona, ej. robo de vehículo).")
+            lectura(f"La distribución tiene asimetría positiva. La mediana es {mediana:.0f} años y la cola llega a más "
+                    "de 90. La mayor cantidad de víctimas tiene entre 25 y 40 años. Se excluyen las edades 0 o "
+                    "negativas, que corresponden a delitos sin víctima persona (por ejemplo, robo de vehículo).")
         with c2:
             # Relación categórica-numérica: edad por delito
             st.subheader("Edad según tipo de delito")
@@ -782,9 +791,9 @@ with tab_quien:
             fig.update_layout(**LAYOUT)
             fig.update_layout(height=430 + 6 * max(0, len(orden) - 10))
             st.plotly_chart(fig, width="stretch")
-            lectura(f"La mediana va de **{orden.iloc[0]:.0f} años** ({orden.index[0]}) a "
-                    f"**{orden.iloc[-1]:.0f}** ({orden.index[-1]}). Muestra de 30 mil víctimas (random_state=42) "
-                    "para que el navegador no se ponga lento; las medianas se calculan con todos los datos.")
+            lectura(f"La mediana va desde {orden.iloc[0]:.0f} años ({orden.index[0]}) hasta "
+                    f"{orden.iloc[-1]:.0f} ({orden.index[-1]}). El gráfico usa una muestra de 30 mil víctimas "
+                    "(random_state=42) para que cargue rápido, pero las medianas se calculan con todos los datos.")
 
         st.divider()
         st.subheader("Sexo de la víctima por delito")
@@ -807,9 +816,9 @@ with tab_quien:
         fig.update_layout(height=520, legend=dict(orientation="h", y=-0.12, title=""))
         st.plotly_chart(fig, width="stretch")
         mas_mujer, mas_hombre = tabla["Mujer"].idxmax(), tabla["Hombre"].idxmax()
-        lectura(f"Más víctimas mujeres: **{mas_mujer}** ({tabla.loc[mas_mujer, 'Mujer']:.0f}%). Más víctimas "
-                f"hombres: **{mas_hombre}** ({tabla.loc[mas_hombre, 'Hombre']:.0f}%). Cada delito necesita su "
-                "propia campaña de prevención.")
+        lectura(f"El delito con mayor proporción de víctimas mujeres es {mas_mujer} ({tabla.loc[mas_mujer, 'Mujer']:.0f}%) "
+                f"y el con mayor proporción de hombres es {mas_hombre} ({tabla.loc[mas_hombre, 'Hombre']:.0f}%). Como "
+                "el perfil de la víctima cambia según el delito, la prevención debería ajustarse a cada uno.")
 
         st.divider()
         # ---- Multidimensional 1: categorías paralelas -----------
@@ -836,35 +845,37 @@ with tab_quien:
             fig.update_layout(height=560, margin=dict(t=40, b=30, l=140, r=140),
                               coloraxis_colorbar=dict(title="Edad", thickness=12))
             st.plotly_chart(fig, width="stretch")
-            lectura("Cada cinta es un grupo de víctimas; su ancho es la cantidad y su **color la edad** por década "
-                    "(amarillo = joven, morado = mayor). Sigue una cinta de izquierda a derecha: los delitos graves "
-                    "con víctima se reparten entre vivienda (35%) y calle (33%), la fuerza física es el 55% de los "
-                    "casos con arma, y en "
+            lectura("Cada cinta es un grupo de víctimas. El ancho indica la cantidad y el color la edad por década "
+                    "(amarillo = joven, morado = mayor). Siguiendo las cintas de izquierda a derecha, los delitos "
+                    "graves con víctima se reparten entre vivienda (35%) y calle (33%), la fuerza física es el 55% "
+                    "de los casos con arma, y en "
                     "todas las categorías las víctimas mujeres son algo más jóvenes (en delitos sexuales, mediana de "
-                    "27 años vs 33 en hombres). Haz clic en una categoría para resaltarla. Muestra de 20 mil "
+                    "27 años frente a 33 en hombres). Al hacer clic en una categoría se resalta. Muestra de 20 mil "
                     "(random_state=42).")
 
         # ---- Multidimensional 2: coordenadas paralelas ----------
         st.subheader("Coordenadas paralelas: edad, hora, día y retraso de la denuncia")
         color_pc = st.selectbox("Color continuo", ["Edad", "Hora", "Retraso (días)"], key="pcoord_color")
-        muestra = dff_persona[["Edad", "Hora", "N° día", "Mes del año", "Retraso (días)"]].sample(
-            min(len(dff_persona), 5_000), random_state=42)
-        muestra["Retraso (días)"] = muestra["Retraso (días)"].clip(upper=30)   # vista 0–30 días como en el Certamen 2
+        # Solo denuncias hechas hasta 30 días después del delito (vista 0–30 días como en el Certamen 2)
+        hasta30 = dff_persona[dff_persona["Retraso (días)"] <= 30]
+        muestra = hasta30[["Edad", "Hora", "N° día", "Mes del año", "Retraso (días)"]].sample(
+            min(len(hasta30), 5_000), random_state=42)
         fig = px.parallel_coordinates(
             muestra, dimensions=["Edad", "Hora", "N° día", "Mes del año", "Retraso (días)"], color=color_pc,
             color_continuous_scale="Plasma_r",
             labels={"Edad": "Edad (años)", "Hora": "Hora (0–23)", "N° día": "Día (1=lun, 7=dom)",
-                    "Mes del año": "Mes (1–12)", "Retraso (días)": "Retraso denuncia (días, tope 30)"},
+                    "Mes del año": "Mes (1–12)", "Retraso (días)": "Retraso denuncia (días, hasta 30)"},
         )
         fig.update_layout(**LAYOUT)
         fig.update_layout(height=480, margin=dict(t=70, b=30, l=60, r=60),
                           coloraxis_colorbar=dict(title=color_pc, thickness=12))
         st.plotly_chart(fig, width="stretch")
-        lectura("Arrastra el mouse sobre un eje para **filtrar** (ej. marca Retraso > 20 días). Las denuncias "
-                "tardías tienen edades parecidas al resto, pero son sobre todo fraude y robo de identidad (40% "
-                "de ellas, con todos los datos) y casi 1 de cada 5 tiene la hora en 12:00: cuando la víctima se "
-                "entera días después, no sabe a qué hora ocurrió. Muestra de 5 mil (random_state=42); con más "
-                "líneas el gráfico se vuelve una mancha.")
+        lectura("Arrastrando el mouse sobre un eje se filtran las líneas (por ejemplo, Retraso mayor a 20 días). Las "
+                "denuncias tardías tienen edades parecidas al resto, pero son sobre todo fraude y robo de identidad "
+                "(40% de ellas, con todos los datos), y casi 1 de cada 5 tiene la hora en 12:00, porque si la víctima "
+                "se entera días después no sabe a qué hora ocurrió. Se muestran las denuncias hechas hasta 30 días "
+                f"después del delito ({pct(len(hasta30) / len(dff_persona) * 100)} de las víctimas) y una muestra de "
+                "5 mil (random_state=42), porque con más líneas el gráfico no se lee.")
 
 # ── 11. PESTAÑA CUÁNDO — TIEMPO ──────────────────────────────
 with tab_cuando:
@@ -899,9 +910,9 @@ with tab_cuando:
     fig.update_xaxes(tickformat="%m/%Y", rangeslider_visible=True)
     st.plotly_chart(fig, width="stretch")
     por_mes = dff.groupby("Mes").size()
-    lectura(f"Mes con menos delitos: {por_mes.idxmin():%m/%Y} ({fmt(por_mes.min())}); con más: "
-            f"{por_mes.idxmax():%m/%Y} ({fmt(por_mes.max())}). El alza empieza tras la reapertura total "
-            "(junio 2021) y llega al máximo en 2022. Usa la barra inferior para hacer zoom en un período.")
+    lectura(f"El mes con menos delitos es {por_mes.idxmin():%m/%Y} ({fmt(por_mes.min())}) y el con más es "
+            f"{por_mes.idxmax():%m/%Y} ({fmt(por_mes.max())}). El alza empieza después de la reapertura total "
+            "(junio 2021) y llega a su máximo en 2022. Con la barra inferior se puede hacer zoom en un período.")
 
     st.divider()
     c1, c2 = st.columns(2)
@@ -932,10 +943,10 @@ with tab_cuando:
                                                  radialaxis=dict(ticksuffix="%", angle=90)),
                           legend=dict(orientation="h", y=-0.12, title=""))
         st.plotly_chart(fig, width="stretch")
-        lectura("Se lee como un reloj de 24 horas (00:00 arriba). Cada línea muestra cómo se reparten los delitos "
-                "de un grupo en el día; las formas se comparan aunque los grupos tengan tamaños distintos. El "
-                "delito sube desde las 15:00 y llega al máximo entre las 17 y 20 h. Compara *Tipo de día*: el fin "
-                "de semana la madrugada (00–03 h) concentra el 14,6% de los delitos vs 10,9% de lunes a viernes.")
+        lectura("Se lee como un reloj de 24 horas con las 00:00 arriba. Cada línea muestra en porcentaje cómo se "
+                "reparten en el día los delitos de un grupo, así que se pueden comparar grupos de distinto tamaño. El "
+                "delito sube desde las 15:00 y llega al máximo entre las 17 y las 20 h. Comparando por Tipo de día, "
+                "el fin de semana la madrugada (00 a 03 h) concentra el 14,6% de los delitos, frente al 10,9% de lunes a viernes.")
     with c2:
         # ---- Polar 2: radar semanal ---------------------------
         st.subheader("Radar semanal: ¿qué día pesa más cada categoría?")
@@ -964,9 +975,9 @@ with tab_cuando:
                                                  radialaxis=dict(range=[rmin, g["Índice (100 = día promedio)"].max() + 5])),
                           legend=dict(orientation="h", y=-0.12, title=""))
         st.plotly_chart(fig, width="stretch")
-        lectura("Índice 100 = el día promedio de esa categoría. Con todos los datos, la violencia sube el fin de "
-                "semana (domingo 112, sábado 108); el fraude cae el sábado (82) y domingo (74) porque se detecta "
-                "en días hábiles; robos y hurtos llegan a su máximo el viernes (114).")
+        lectura("Un índice de 100 equivale al día promedio de esa categoría. Con todos los datos, la violencia sube el "
+                "fin de semana (domingo 112, sábado 108), el fraude baja el sábado (82) y el domingo (74) porque se "
+                "detecta en días hábiles, y los robos y hurtos llegan a su máximo el viernes (114).")
 
     st.divider()
     c1, c2 = st.columns(2)
@@ -986,8 +997,8 @@ with tab_cuando:
         celdas = tabla_dh.drop(columns=12).stack()
         dia_max, hora_max = celdas.idxmax()
         hora_min = tabla_dh.sum().idxmin()
-        lectura(f"Sin contar las 12:00, el momento más crítico es el **{dia_max.lower()} a las {hora_max}:00** "
-                f"({fmt(celdas.max())} delitos). La hora más tranquila es las **{hora_min:02d}:00**; la franja de "
+        lectura(f"Sin contar las 12:00, el momento con más delitos es el {dia_max.lower()} a las {hora_max}:00 "
+                f"({fmt(celdas.max())} delitos). La hora con menos delitos es las {hora_min:02d}:00, y la franja de "
                 "03:00 a 06:00 es la más baja todos los días.")
     with c2:
         st.subheader("Año × mes: promedio diario")
@@ -1004,10 +1015,10 @@ with tab_cuando:
         st.plotly_chart(fig, width="stretch")
         (a_min, m_min), (a_max, m_max) = g.set_index(["Año", "Mes del año"])["Por día"].idxmin(), \
             g.set_index(["Año", "Mes del año"])["Por día"].idxmax()
-        lectura(f"Se usa el promedio diario (no el total) para comparar meses de distinto largo. Mínimo: "
-                f"**{MESES[m_min - 1]} {a_min}** ({g['Por día'].min():.0f} por día); máximo: **{MESES[m_max - 1]} "
-                f"{a_max}** ({g['Por día'].max():.0f} por día). La mitad de 2020 y comienzos de 2021 (restricciones) "
-                "son claros; 2022 es la fila más oscura. Diciembre de 2023 no está (datos incompletos).")
+        lectura(f"Se usa el promedio diario y no el total para poder comparar meses de distinto largo. El mínimo es "
+                f"{MESES[m_min - 1]} {a_min} ({g['Por día'].min():.0f} por día) y el máximo {MESES[m_max - 1]} "
+                f"{a_max} ({g['Por día'].max():.0f} por día). Mediados de 2020 y comienzos de 2021 (restricciones) "
+                "se ven más claros y 2022 es la fila más oscura. Diciembre de 2023 no está porque los datos están incompletos.")
 
     st.divider()
     # ---- Mapa animado por año ---------------------------------
@@ -1027,8 +1038,10 @@ with tab_cuando:
     fig.update_layout(height=560, margin=dict(t=0, b=0, l=0, r=0), map_layers=BORDES,
                       legend=dict(orientation="h", y=0.99, x=0.01, title="Buró", bgcolor="rgba(255,255,255,.8)"))
     st.plotly_chart(fig, width="stretch")
-    lectura("Presiona ▶ para animar. Central es la burbuja que más crece entre 2020 y 2022 (pasa del 2.º al 1.er "
-            "lugar); las del Valle cambian poco. El mapa muestra **dónde** se produjo el alza post-pandemia.")
+    lectura("Con el botón de reproducir (abajo a la izquierda) el mapa se anima por año.\n\nDónde se concentra: "
+            "Central es la burbuja que más crece entre 2020 y 2022 y pasa del 2.º al 1.er lugar.\n\nDónde no: las "
+            "burbujas del Valle cambian poco de un año a otro.\n\nQué implica: el alza después de la pandemia no fue "
+            "pareja en la ciudad, se concentró en el centro, así que el refuerzo debería partir por ahí.")
 
 # ── 12. PESTAÑA COMPARAR ÁREAS ───────────────────────────────
 with tab_comparar:
@@ -1054,7 +1067,7 @@ with tab_comparar:
                     "Edad mediana": d["Edad"].median()}
 
         ra, rb = resumen(area_a), resumen(area_b)
-        st.caption(f"Valores de **{area_b}**; debajo, la diferencia con **{area_a}**. "
+        st.caption(f"Se muestran los valores de {area_b} y, debajo, la diferencia con {area_a}. "
                    "Este comparador usa todos los filtros globales menos el de área.")
         m = st.columns(6)
         formatos = [("Delitos", fmt, lambda d: f"{'+' if d >= 0 else '-'}{fmt(abs(d))}"),
@@ -1065,7 +1078,7 @@ with tab_comparar:
                     ("Edad mediana", lambda v: f"{v:.0f} años", lambda d: f"{d:+.0f} año{'s' if abs(round(d)) != 1 else ''}")]
         for i, (k, f_valor, f_delta) in enumerate(formatos):
             m[i].metric(k, f_valor(rb[k]), delta=f"{f_delta(rb[k] - ra[k])} vs {area_a}", delta_color="off",
-                        help=f"{area_a}: {f_valor(ra[k])} · {area_b}: {f_valor(rb[k])}")
+                        help=f"{area_a}: {f_valor(ra[k])} | {area_b}: {f_valor(rb[k])}")
 
         col1, col2 = st.columns(2)
         g = plano(base.groupby(["Área", dim_cmp], observed=True).size().reset_index(name="Delitos"))
@@ -1083,7 +1096,7 @@ with tab_comparar:
             tope = g["%"].max() * 1.1
             ticks = [v for v in range(-100, 101, 10) if abs(v) <= tope]
             fig.update_layout(**LAYOUT)
-            fig.update_layout(height=460, xaxis=dict(title=f"← {area_a}   |   {area_b} →  (% de los delitos)",
+            fig.update_layout(height=460, xaxis=dict(title=f"{area_a} (izquierda) | {area_b} (derecha), % de los delitos",
                                                      tickvals=ticks, ticktext=[str(abs(v)) for v in ticks],
                                                      range=[-tope, tope]),
                               yaxis_title="", legend=dict(orientation="h", y=-0.2, title=""))
@@ -1102,15 +1115,15 @@ with tab_comparar:
             st.plotly_chart(fig, width="stretch")
         dif = g.pivot(index=dim_cmp, columns="Área", values="%").fillna(0)
         dif["dif"] = dif[area_b] - dif[area_a]
-        lectura(f"La mayor diferencia de perfil está en **{dif['dif'].abs().idxmax()}**: "
-                f"{pct(dif.loc[dif['dif'].abs().idxmax(), area_a])} en {area_a} vs "
-                f"{pct(dif.loc[dif['dif'].abs().idxmax(), area_b])} en {area_b}. Dos áreas con volumen parecido "
+        lectura(f"La mayor diferencia de perfil está en {dif['dif'].abs().idxmax()}, con "
+                f"{pct(dif.loc[dif['dif'].abs().idxmax(), area_a])} en {area_a} frente a "
+                f"{pct(dif.loc[dif['dif'].abs().idxmax(), area_b])} en {area_b}. Aunque dos áreas tengan un volumen parecido, "
                 "pueden necesitar estrategias distintas.")
 
     st.divider()
     # ---- Relaciones entre indicadores de las 21 áreas ---------
     st.subheader("Relación entre densidad del delito y tasa de arresto (21 áreas)")
-    vista = st.radio("Vista", ["Todo el período (con línea de tendencia)", "Animado por año"], horizontal=True,
+    vista = st.radio("Vista", ["Todo el período", "Animado por año"], horizontal=True,
                      key="rel_vista")
     por = ["Área", "Año"] if vista.startswith("Animado") else ["Área"]
     g = plano(dff.groupby(por, observed=True)
@@ -1125,32 +1138,34 @@ with tab_comparar:
     g["Delitos por km² al año"] = g["Delitos"] / g["Área"].map(KM2) / (g["Dias"] / 365.25)
     g["Buró"] = g["Área"].map(BURO)
     g = g.rename(columns={"Arresto": "% con arresto", "Graves": "% delitos graves"})
+    # Nombre fijo solo en el 25% de áreas más densas (las demás se ven al pasar el cursor)
+    claves = ["Año"] if vista.startswith("Animado") else []
+    q75 = (g.groupby(claves)["Delitos por km² al año"].transform(lambda s: s.quantile(0.75)) if claves
+           else g["Delitos por km² al año"].quantile(0.75))
+    g["Etiqueta"] = g["Área"].where(g["Delitos por km² al año"] >= q75, "")
     argumentos = dict(x="Delitos por km² al año", y="% con arresto", size="Delitos", color="Buró",
-                      color_discrete_map=COLOR_BURO, hover_name="Área", log_x=True, size_max=45, text="Área",
+                      color_discrete_map=COLOR_BURO, hover_name="Área", size_max=45, text="Etiqueta",
                       hover_data={"Delitos": ":,", "Delitos por km² al año": ":,.0f", "% con arresto": ":.1f",
-                                  "% delitos graves": ":.1f", "Buró": False})
+                                  "% delitos graves": ":.1f", "Buró": False, "Etiqueta": False})
     if vista.startswith("Animado"):
         fig = px.scatter(g, animation_frame="Año",
-                         range_x=[g["Delitos por km² al año"].min() * 0.7, g["Delitos por km² al año"].max() * 1.4],
+                         range_x=[0, g["Delitos por km² al año"].max() * 1.15],
                          range_y=[0, g["% con arresto"].max() * 1.15], **argumentos)
-    elif len(g) >= 3:
-        fig = px.scatter(g, trendline="ols", trendline_scope="overall", trendline_options=dict(log_x=True),
-                         trendline_color_override=GRIS, **argumentos)
     else:
         fig = px.scatter(g, **argumentos)
     fig.update_traces(textposition="top center", textfont_size=10, selector=dict(mode="markers+text"))
     fig.update_layout(**LAYOUT)
-    fig.update_layout(height=560, xaxis_title="Delitos por km² al año (escala logarítmica)",
+    fig.update_layout(height=560, xaxis_title="Delitos por km² al año",
                       yaxis_title="% de casos con arresto", legend=dict(orientation="h", y=-0.15, title="Buró"))
     st.plotly_chart(fig, width="stretch")
     corr = g[["Delitos por km² al año", "% con arresto"]].corr(method="spearman").iloc[0, 1] if len(g) > 2 else float("nan")
     mas, menos = g.nlargest(1, "% con arresto").iloc[0], g.nsmallest(1, "% con arresto").iloc[0]
-    lectura(f"Cada burbuja es un área (tamaño = cantidad de delitos). Correlación de Spearman entre densidad y "
-            f"arresto: **{num(corr, 2)}**: donde el delito es más denso, **menos** casos terminan en arresto. Las "
-            "áreas del Valle (celeste), las menos densas, arrestan más; Central, la más densa, está entre las que "
-            f"menos. En esta selección: más arresto en {mas['Área']} ({pct(mas['% con arresto'])}), menos en "
-            f"{menos['Área']} ({pct(menos['% con arresto'])}). Es una asociación, no prueba causa (puede influir el "
-            "tipo de delito de cada área).")
+    lectura(f"Cada burbuja es un área y su tamaño es la cantidad de delitos. La correlación de Spearman entre densidad "
+            f"y arresto es {num(corr, 2)}, es decir, donde el delito es más denso menos casos terminan en arresto. Las "
+            "áreas del Valle (celeste), que son las menos densas, arrestan más, y Central, la más densa, está entre las "
+            f"que menos. En esta selección el mayor arresto está en {mas['Área']} ({pct(mas['% con arresto'])}) y el "
+            f"menor en {menos['Área']} ({pct(menos['% con arresto'])}). Esto muestra una asociación y no prueba una causa "
+            "(también puede influir el tipo de delito de cada área).")
 
     st.divider()
     st.subheader("Tasa de arresto por área y categoría")
@@ -1162,49 +1177,49 @@ with tab_comparar:
     tabla = tabla.loc[tabla.mean(axis=1).sort_values(ascending=False).index]
     fig = px.imshow(tabla.round(1), text_auto=".0f", aspect="auto", color_continuous_scale="Blues",
                     labels=dict(x="Categoría", y="Área", color="% con arresto"))
-    fig.update_traces(hovertemplate="<b>%{y}</b> · %{x}<br>%{z:.1f}% de los casos con arresto<extra></extra>")
+    fig.update_traces(hovertemplate="<b>%{y}</b>, %{x}<br>%{z:.1f}% de los casos con arresto<extra></extra>")
     fig.update_layout(**LAYOUT)
     fig.update_layout(height=max(320, 28 * len(tabla)), xaxis_title="", yaxis_title="")
     st.plotly_chart(fig, width="stretch")
-    lectura("Celdas vacías = menos de 30 casos. Vehículos y fraude tienen tasas de arresto bajísimas en todas las "
-            "áreas; la violencia es la que más termina en arresto. Comparar dentro de una misma columna controla "
-            "el tipo de delito: aun así, las áreas del Valle arrestan más que Central para la misma categoría.")
+    lectura("Las celdas vacías tienen menos de 30 casos. Vehículos y fraude tienen tasas de arresto muy bajas en todas "
+            "las áreas y la violencia es la que más termina en arresto. Al comparar dentro de una misma columna se "
+            "compara el mismo tipo de delito, y aun así las áreas del Valle arrestan más que Central.")
 
 # ── 13. PESTAÑA HALLAZGOS ────────────────────────────────────
 with tab_hallazgos:
-    st.subheader("Pregunta: ¿dónde, cuándo y a quién debe priorizar la prevención la LAPD?")
+    st.subheader("¿Dónde, cuándo y a quién debe priorizar la prevención la LAPD?")
     st.markdown("""
-| # | Hallazgo (datos completos, 2020 – nov-2023) | Dónde verlo | Recomendación |
+| # | Hallazgo (datos completos, 2020 a nov-2023) | Dónde verlo | Recomendación |
 |---|---|---|---|
-| **1. Dónde** | El delito se concentra en Central (Downtown) y Hollywood: Central es #1 desde 2021 y tiene la mayor densidad por km² de la ciudad; los puntos calientes son pocas cuadras. | 🗺️ Dónde · coropleta por km² y densidad | Reforzar Central y Hollywood; priorizar por **densidad**, no solo por cantidad. Mapa de prioridades por delito (robo desde vehículo → Central; robo de vehículo → 77th Street). |
-| **2. A quién** | El perfil de víctima cambia por delito (% sobre todas las denuncias de cada delito, como en el Certamen 2): robo de identidad 58% mujeres; robo desde vehículo 56% hombres; robo a vivienda, mediana de 45 años. También: violencia de pareja 76% mujeres; agresión con arma 71% hombres. | 👥 A quién · sexo y edad por delito, categorías paralelas | Campañas segmentadas por delito y perfil de víctima. |
-| **3. Cuándo** | Alza 2020 → 2022 (+17,5%) con la reapertura post-pandemia. La franja real va de 15:00 a 20:00 (un tercio de los delitos; máximo a las 18:00) y el viernes es el día con más delitos; las 12:00 están infladas por ser la hora que se anota por defecto. | ⏰ Cuándo · línea mensual, reloj del delito | Concentrar turnos entre 15:00 y 20:00, en especial los viernes. |
-| **Nuevo** | Solo el 9,0% de los casos termina en arresto (vehículos 2,6%, fraude 1,7%). Donde el delito es más denso, menos se arresta: por buró, Valle 11,2% vs Central 7,9%; por área, de Harbor (12,7%) a Central (6,4%), con Spearman −0,37 entre densidad y arresto en las 21 áreas. | ⚖️ Comparar áreas · 🧩 Qué | Reforzar la capacidad de investigación en las áreas densas con menos arresto (Central 6,4% y Southeast 6,6%) y estudiar qué hacen distinto las áreas del Valle. |
+| 1. Dónde | El delito se concentra en Central (Downtown) y Hollywood. Central es el área con más delitos desde 2021 y la de mayor densidad por km² de la ciudad, y los puntos calientes abarcan pocas cuadras. | Pestaña Dónde: coropleta por km² y mapa de densidad | Reforzar Central y Hollywood y priorizar según la densidad además de la cantidad. Priorizar también por delito, por ejemplo robo desde vehículo en Central y robo de vehículo en 77th Street. |
+| 2. A quién | El perfil de la víctima cambia según el delito (% sobre todas las denuncias de cada delito, como en el Certamen 2). En robo de identidad el 58% son mujeres, en robo desde vehículo el 56% son hombres y en robo a vivienda la mediana de edad es 45 años. Además, en violencia de pareja el 76% son mujeres y en agresión con arma el 71% son hombres. | Pestaña A quién: sexo y edad por delito, categorías paralelas | Campañas de prevención separadas por delito y perfil de víctima. |
+| 3. Cuándo | Los delitos subieron un 17,5% entre 2020 y 2022, con la reapertura después de la pandemia. La franja con más delitos va de 15:00 a 20:00 (un tercio del total, con el máximo a las 18:00) y el viernes es el día con más delitos. Las 12:00 aparecen infladas porque es la hora que se anota cuando no se conoce la real. | Pestaña Cuándo: línea mensual y reloj del delito | Concentrar turnos entre 15:00 y 20:00, en especial los viernes. |
+| 4. Arrestos | Solo el 9,0% de los casos termina en arresto (vehículos 2,6%, fraude 1,7%). Donde el delito es más denso se arresta menos: por buró, Valle 11,2% frente a Central 7,9%, y por área, desde Harbor (12,7%) hasta Central (6,4%). La correlación de Spearman entre densidad y arresto en las 21 áreas es -0,37. | Pestañas Comparar áreas y Qué | Reforzar la capacidad de investigación en las áreas densas con menos arresto (Central 6,4% y Southeast 6,6%) y estudiar qué hacen distinto las áreas del Valle. |
 
-**Límites.** Datos hasta nov-2023 (se cortó diciembre, incompleto); las 12:00 y el sexo faltante son problemas
-de registro; no hay 2019 para comparar y una coincidencia en el tiempo no prueba causa. Los límites de áreas y
-distritos son los oficiales del LAPD (LA Times / LAPD GIS): el 98,7% de los delitos cae dentro del polígono de
-su área y el 99,8% tiene su distrito en el mapa.
+Límites: los datos llegan hasta noviembre de 2023 (diciembre se cortó porque estaba incompleto). Las 12:00 y el
+sexo faltante son problemas de registro. No hay datos de 2019 para comparar, y que dos cosas coincidan en el
+tiempo no prueba que una cause la otra. Los límites de áreas y distritos son los oficiales del LAPD (LA Times y
+LAPD GIS): el 98,7% de los delitos cae dentro del polígono de su área y el 99,8% tiene su distrito en el mapa.
 """)
     with st.expander("Metodología y datos"):
         st.markdown(f"""
-- **Dataset:** *Crime Data from 2020 to Present* (LAPD), Kaggle `asaniczka/crimes-in-los-angeles-2020-2023`, CC0.
-- **Limpieza (Certamen 2):** fechas a `datetime`, corte de diciembre de 2023, arma vacía → "Sin arma",
-  sexo H y "-" → X, vacíos → "Sin dato", retraso de la denuncia en días. Edad ≤ 0 se excluye solo en los
-  gráficos de edad; coordenadas (0,0) solo en los mapas. Script: `preparar_datos.py`.
-- **Dataset completo:** {fmt(len(df))} filas en `data/delitos_LA_limpio.csv.gz` (19 MB < 25 MB): **no se usa
-  muestra** para KPIs, coropletas ni agregados. Solo se muestrean los gráficos que dibujan cada fila
-  (mapa de puntos, boxplot, paralelas) con `random_state=42`.
-- **Categorías:** las 138 descripciones del LAPD se agrupan en 7 categorías con reglas de texto (ver código).
-- **Gravedad:** Parte 1 (grave) y Parte 2 (menos grave) de la clasificación del FBI que usa el LAPD.
-- **GeoJSON:** 21 áreas y ~1.135 distritos de reporte del LAPD (`data/lapd_areas.geojson`,
+- Dataset: Crime Data from 2020 to Present (LAPD), Kaggle `asaniczka/crimes-in-los-angeles-2020-2023`, licencia CC0.
+- Limpieza (Certamen 2): fechas a `datetime`, corte de diciembre de 2023, arma vacía como "Sin arma",
+  sexo H y "-" como X, vacíos como "Sin dato" y retraso de la denuncia en días. La edad 0 o negativa se excluye
+  solo en los gráficos de edad, y las coordenadas (0,0) solo en los mapas. Script: `preparar_datos.py`.
+- Dataset completo: {fmt(len(df))} filas en `data/delitos_LA_limpio.csv.gz` (19 MB, bajo el límite de 25 MB).
+  No se usa muestra para KPIs, coropletas ni agregados. Solo se muestrean los gráficos que dibujan cada fila
+  (mapa de puntos, boxplot y paralelas), con `random_state=42`.
+- Categorías: las 138 descripciones del LAPD se agrupan en 7 categorías con reglas de texto (ver código).
+- Gravedad: Parte 1 (grave) y Parte 2 (menos grave) de la clasificación del FBI que usa el LAPD.
+- GeoJSON: 21 áreas y unos 1.135 distritos de reporte del LAPD (`data/lapd_areas.geojson` y
   `data/lapd_distritos.geojson`), con la superficie de cada área en km².
 """)
 
 # ── 14. TABLA DE DATOS (DESPLEGABLE) ─────────────────────────
 # Se muestran 1.000 filas: mandar 850 mil al navegador sería muy lento.
 st.divider()
-with st.expander(f"📋 Ver datos filtrados (primeras 1.000 de {fmt(len(dff))} filas)"):
+with st.expander(f"Ver datos filtrados (primeras 1.000 de {fmt(len(dff))} filas)"):
     columnas = ["date_occurred", "Área", "Distrito", "Categoría", "Delito (detalle)", "crime_description",
                 "Gravedad", "Lugar", "Arma", "Edad", "Sexo", "Estado", "Retraso (días)"]
     st.dataframe(
