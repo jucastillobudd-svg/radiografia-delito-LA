@@ -359,8 +359,16 @@ if areas:
 dff = df[mask]  # dff = "dataframe filtrado"
 
 # ── 6. ENCABEZADO ─────────────────────────────────────────────
-st.title("Radiografía del delito en Los Ángeles (2020–2023)")
-st.markdown("#### ¿Dónde, cuándo y a quién debe priorizar la prevención la Policía de Los Ángeles?")
+# Banner con una foto de Los Ángeles (Observatorio Griffith y el centro de fondo).
+# La imagen está en static/banner_la.jpg; Streamlit la sirve en "app/static/..." porque
+# .streamlit/config.toml tiene enableStaticServing = true. Foto: Benjamin Cutting, Unsplash.
+st.markdown("""
+<div style="background-image: linear-gradient(90deg, rgba(11,37,69,.92) 0%, rgba(11,37,69,.7) 45%, rgba(11,37,69,.15) 100%), url('app/static/banner_la.jpg'); background-size: cover; background-position: center; border-radius: 8px; padding: 44px 40px; position: relative; margin-bottom: 4px">
+<h1 style="color: white; margin: 0; padding: 0; max-width: 720px; line-height: 1.15">Radiografía del delito en Los Ángeles (2020–2023)</h1>
+<p style="color: #dbe3ee; font-size: 1.2rem; margin: 12px 0 0; max-width: 640px">¿Dónde, cuándo y a quién debe priorizar la prevención la Policía de Los Ángeles?</p>
+<span style="position: absolute; right: 12px; bottom: 6px; font-size: 0.7rem; color: rgba(255,255,255,.8)">Foto: Benjamin Cutting, Unsplash</span>
+</div>
+""", unsafe_allow_html=True)
 st.caption("Dirigido a las jefaturas de área y equipos de planificación de patrullajes del LAPD, "
            "y a la Municipalidad de Los Ángeles. "
            f"Con los filtros aplicados se muestran {fmt(len(dff))} de {fmt(len(df))} delitos.")

@@ -22,6 +22,8 @@ El dashboard está pensado para las jefaturas de área y los equipos de planific
 
 ## Qué incluye
 
+Encabezado con una foto de Los Ángeles (el Observatorio Griffith con el centro de fondo) que lleva el título y la pregunta del dashboard.
+
 Filtros globales (panel lateral, afectan a toda la página): período (selector de fechas), área policial, categoría de delito, tipo de delito (top 10), gravedad, sexo de la víctima y hora del día. Si la combinación deja la tabla vacía, la app avisa y se detiene con `st.stop()`. Hay un botón para restablecer los filtros.
 
 6 KPIs con `st.metric`: delitos, promedio diario, % de delitos graves, % con arresto, % de víctimas mujeres y hora más crítica. Cinco de ellos comparan contra el total sin filtros usando `delta`; el de la hora más crítica muestra debajo el % de delitos denunciados el mismo día.
@@ -47,6 +49,7 @@ Todos los gráficos tienen título, ejes con unidad, la misma paleta de colores 
 | Archivo en el repo | `data/delitos_LA_limpio.csv.gz`, el dataset limpio del Certamen 2 completo |
 | Tamaño | 851.405 filas × 13 columnas, 19 MB comprimido |
 | Período | 01-01-2020 al 30-11-2023 (diciembre de 2023 se cortó porque tiene solo 4 días) |
+| Foto del encabezado | [Benjamin Cutting en Unsplash](https://unsplash.com/photos/a-view-of-a-city-from-the-top-of-a-hill-1IVoyMCqYKs), licencia Unsplash (uso gratuito). Recortada y reducida a 1920 × 451 px en `static/banner_la.jpg` |
 
 No se usa muestra para los KPIs ni para los agregados: el CSV limpio pesa 19 MB comprimido en `.gz`, bajo el límite de 25 MB de la pauta, y `pd.read_csv` lo lee directo. Solo los gráficos que dibujan cada fila usan una muestra reproducible con `random_state=42`, para que el navegador no se ponga lento:
 
@@ -79,8 +82,10 @@ radiografia-delito-LA/
 │   └── lapd_distritos.geojson        # ~1.135 distritos de reporte
 ├── img/
 │   └── captura_dashboard.png         # Captura para este README
+├── static/
+│   └── banner_la.jpg                 # Foto del encabezado (Benjamin Cutting, Unsplash)
 ├── .streamlit/
-│   └── config.toml                   # Tema visual (colores del proyecto)
+│   └── config.toml                   # Tema visual y carpeta static/ para la foto
 ├── .gitignore
 └── README.md
 ```
@@ -114,6 +119,7 @@ La app está publicada en Streamlit Community Cloud desde este repositorio (rama
 Retroalimentación del Hito 1:
 
 - Se quitaron los emojis de las pestañas, la barra lateral y los textos, y se reescribieron las lecturas y los hallazgos con un lenguaje más simple.
+- La página se ambientó en Los Ángeles: el encabezado ahora es una foto real de la ciudad con el título encima.
 - El grupo preparó una guía de la estructura del código (qué líneas tienen los KPIs, los filtros y cada gráfico).
 
 Ajustes para cumplir la pauta del Hito 2:
